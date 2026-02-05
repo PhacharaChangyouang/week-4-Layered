@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Week 4 - Task Board</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: linear-gradient(135deg, #f7fbff 0%, #f0f4f8 100%);
+      color: #1f2937;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0f172a;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+    }
+
+    input, select, button {
+      padding: 10px;
+      margin: 6px 0;
+      width: 100%;
+      border: 1px solid #e6edf3;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 14px;
+      color: #0f172a;
+      box-sizing: border-box;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background .15s ease;
+      border-radius: 8px;
+    }
+
+    button:hover { background: #6a91e7; }
+
+    hr { border: none; border-top: 1px solid #eef2f6; margin: 16px 0; }
+
+    .task {
+      border: 1px solid #eef2f6;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: #ffffff;
+    }
+
+    .task button { width: auto; padding: 8px 12px; margin-top: 0; }
+
+    .task button {
+      margin-top: 5px;
+    }
+
+    .TODO { border-left: 6px solid #f59e0b; background: linear-gradient(90deg, rgba(245,158,11,0.04), transparent); }
+    .IN_PROGRESS { border-left: 6px solid #3b82f6; background: linear-gradient(90deg, rgba(59,130,246,0.04), transparent); }
+    .DONE { border-left: 6px solid #10b981; background: linear-gradient(90deg, rgba(16,185,129,0.04), transparent); }
+
+    .priority-low { color: #065f46; background: #ecfdf5; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+    .priority-medium { color: #854d0e; background: #fff7ed; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+    .priority-high { color: #7f1d1d; background: #fff1f2; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 12px; }
+
+    @media (max-width: 600px) {
+      body { margin: 16px; }
+      .container { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1> Task Board (Layered Architecture)</h1>
+
+  <div class="container">
+    <h3>Create Task</h3>
+
+    <input id="title" placeholder="Title" />
+    <input id="description" placeholder="Description" />
+
+    <select id="priority">
+      <option value="LOW">LOW</option>
+      <option value="MEDIUM">MEDIUM</option>
+      <option value="HIGH">HIGH</option>
+    </select>
+
+    <button onclick="createTask()">Add Task</button>
+
+    <hr />
+
+    <h3>Tasks</h3>
+    <div id="tasks"></div>
+  </div>
+
+<script>
+async function loadTasks() {
+  const res = await fetch('/api/tasks');
+  const tasks = await res.json();
+
+  const container = document.getElementById('tasks');
+  container.innerHTML = '';
+
+  tasks.forEach(t => {
+    const div = document.createElement('div');
+    div.className = `task ${t.status}`;
+    div.innerHTML = `
+      <strong>${t.title}</strong><br/>
+      ${t.description || ''}<br/>
+      Status: ${t.status}<br/>
+      Priority: ${t.priority}<br/>
+      <button onclick="nextStatus(${t.id})">Next Status</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function createTask() {
+  const title = document.getElementById('title').value;
+  const description = document.getElementById('description').value;
+  const priority = document.getElementById('priority').value;
+
+  await fetch('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title,
+      description,
+      status: 'TODO',
+      priority
+    })
+  });
+
+  loadTasks();
+}
+
+async function nextStatus(id) {
+  await fetch(`/api/tasks/${id}/next-status`, { method: 'PATCH' });
+  loadTasks();
+}
+
+loadTasks();
+</script>
+
+</body>
+</html>
